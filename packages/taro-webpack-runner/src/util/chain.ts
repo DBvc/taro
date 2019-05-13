@@ -261,7 +261,7 @@ const getModule = (appPath: string, {
   const extractCssLoader = getExtractCssLoader()
 
   const lastStyleLoader = enableExtract ? extractCssLoader : styleLoader
-  
+
   /**
    * css-loader 1.0.0版本移除了minimize选项...升级需谨慎
    *
