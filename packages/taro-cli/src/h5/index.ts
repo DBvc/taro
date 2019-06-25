@@ -1,4 +1,5 @@
 import { PageConfig } from '@tarojs/taro'
+import { IProjectConfig, IH5Config, IH5RouterConfig, IDeviceRatio } from '@tarojs/taro/types/compile'
 import wxTransformer from '@tarojs/transformer-wx'
 import * as babel from 'babel-core'
 import traverse, { NodePath, TraverseOptions } from 'babel-traverse'
@@ -29,7 +30,7 @@ import {
 } from '../util/astConvert'
 import { BUILD_TYPES, processTypeEnum, PROJECT_CONFIG, REG_SCRIPTS, REG_TYPESCRIPT } from '../util/constants'
 import * as npmProcess from '../util/npm'
-import { IBuildConfig, IDeviceRatio, IH5Config, IH5RouterConfig, IOption, IProjectConfig } from '../util/types'
+import { IBuildOptions, IOption } from '../util/types'
 import {
   APIS_NEED_TO_APPEND_THIS,
   deviceRatioConfigName,
@@ -170,7 +171,7 @@ class Compiler {
     })
   }
 
-  async buildDist ({ watch, port }: IBuildConfig) {
+  async buildDist ({ watch, port }: IBuildOptions) {
     const isMultiRouterMode = get(this.h5Config, 'router.mode') === 'multi'
     const entryFileName = this.entryFileName
     const projectConfig = this.projectConfig
@@ -214,6 +215,10 @@ class Compiler {
       },
       isWatch: !!watch,
       outputRoot: outputDir,
+      babel: projectConfig.babel,
+      csso: projectConfig.csso,
+      uglify: projectConfig.uglify,
+      sass: projectConfig.sass,
       plugins: projectConfig.plugins,
       port,
       sourceRoot
@@ -329,7 +334,7 @@ class Compiler {
           ${funcBody}
         </${tabBarPanelComponentName}>`
 
-      const comp = `  
+      const comp = `
         <${tabBarComponentName}
           conf={this.state.${tabBarConfigName}}
           homePage="${homePage}"
@@ -346,7 +351,7 @@ class Compiler {
       return `
         <${providerImportName} store={${storeName}}>
           ${funcBody}
-        </${providerImportName}>  
+        </${providerImportName}>
       `
     }
 
@@ -757,7 +762,7 @@ class Compiler {
               const node = astPath.node
               const key = node.key
               const keyName = toVar(key)
-    
+
               const isRender = keyName === 'render'
               const isComponentWillMount = keyName === 'componentWillMount'
               const isComponentDidMount = keyName === 'componentDidMount'
@@ -773,7 +778,7 @@ class Compiler {
                     wrapWithFuncBody
                   ])
                 )
-    
+
                 node.body = toAst(buildFuncBody(pages), { preserveComments: true })
 
                 node.body.body = compact([
@@ -909,7 +914,7 @@ class Compiler {
 
       const node = astPath.node
       if (t.isFunctionDeclaration(node.declaration)) {
-        
+
         astPath.replaceWithMultiple([
           node.declaration,
           t.exportDefaultDeclaration(node.declaration.id)
@@ -1339,7 +1344,7 @@ class Compiler {
 
 export { Compiler }
 
-export async function build (appPath: string, buildConfig: IBuildConfig) {
+export async function build (appPath: string, buildConfig: IBuildOptions) {
   process.env.TARO_ENV = BUILD_TYPES.H5
   const compiler = new Compiler(appPath)
   await compiler.clean()
